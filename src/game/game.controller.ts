@@ -1,0 +1,110 @@
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  UseGuards,
+  UsePipes,
+  Query,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
+
+import { GameShortInfo } from './types/gameInfo';
+import { GameSettingsInfo } from './types/gameSettings';
+
+import { CreateGameDto, InfoNewGame, OpenGameDto } from './dto/game.dto';
+import { User } from '@app/user/decorators/user.decorator';
+import { UserEntity } from '@app/user/user.entity';
+import { GameService } from './game.service';
+import { JwtAuthGuard } from '@app/user/guards/jwt.guard';
+import { BackendValidationPipe } from '@app/shared/pipes/backendValidation.pipe';
+import {
+  INVALID_REQUEST_PARAMETERS,
+  USER_NOT_FOUND,
+} from '@app/constants/messages';
+import { UserService } from '@app/user/user.service';
+
+@Controller('game')
+export class GameController {
+  constructor(
+    private readonly gameService: GameService,
+    private userService: UserService,
+  ) {}
+
+  @Post()
+  @UseGuards(JwtAuthGuard)
+  @UsePipes(new BackendValidationPipe())
+  async create(
+    @User() currentUser: UserEntity,
+    @Body('game') game: CreateGameDto,
+  ): Promise<InfoNewGame> {
+    // Проверка на то, что отправлены корректные данные
+    if (!game) {
+      throw new HttpException(
+        { errors: { game: INVALID_REQUEST_PARAMETERS } },
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
+    }
+
+    const { opponent } = game;
+    if (!opponent) {
+      throw new HttpException(
+        { errors: { opponent: INVALID_REQUEST_PARAMETERS } },
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
+    }
+    // Поиск оппонента
+    const userOpponent = await this.userService.findUserByName(opponent);
+    if (!userOpponent) {
+      throw new HttpException(
+        { errors: { opponent: USER_NOT_FOUND } },
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
+    }
+
+    const gameId = await this.gameService.createGame(
+      currentUser,
+      userOpponent.id_user,
+    );
+    return this.gameService.buildResponseGameId(gameId);
+  }
+
+  @Get('info')
+  @UseGuards(JwtAuthGuard)
+  async gameInfo(
+    @User('id_user') currentUserId: string,
+    @Query('id') idGame: string,
+  ): Promise<{ game: GameShortInfo }> {
+    const game = await this.gameService.getGameShortInfo(currentUserId, idGame);
+    return { game };
+  }
+
+  @Get('setting')
+  @UseGuards(JwtAuthGuard)
+  async getSetting(
+    @User('id_user') currentUserId: string,
+    @Query('id') idGame: string,
+  ): Promise<GameSettingsInfo> {
+    try {
+      const gameSettings = await this.gameService.getGameSetting(
+        currentUserId,
+        idGame,
+      );
+      return gameSettings;
+    } catch (e) {
+      const { message } = e;
+      throw new HttpException(message || e, HttpStatus.UNPROCESSABLE_ENTITY);
+    }
+  }
+
+  @Get('open')
+  @UseGuards(JwtAuthGuard)
+  async getOpenGames(
+    @User('id_user') currentUserId: string,
+  ): Promise<{ games: OpenGameDto[] }> {
+    // Выдать список открытых игр, где юзер участвует
+    const games = await this.gameService.getOpenGames(currentUserId);
+    return { games };
+  }
+}
