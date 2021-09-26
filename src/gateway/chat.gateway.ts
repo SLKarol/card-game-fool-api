@@ -18,8 +18,6 @@ export class ChatGateway implements OnGatewayConnection {
 
   async handleConnection(socket: Socket) {
     const user = await this.chatService.getUserFromSocket(socket);
-    console.log('connect user :>> ', user);
-
     const { id_user, name_user } = user;
     socket.data.user = { id_user, name_user };
   }
@@ -37,8 +35,26 @@ export class ChatGateway implements OnGatewayConnection {
     return data;
   }
 
-  @SubscribeMessage('join_chat')
+  @SubscribeMessage('join_game')
   async joinGameChat(
+    @MessageBody() data: { gameId: string },
+    @ConnectedSocket() socket: Socket,
+  ) {
+    const { user } = socket.data;
+    if (!user) return;
+    const { name_user: nameUser } = user;
+    const { gameId } = data;
+    this.chatService.createGameChat(socket, gameId);
+    socket.join(gameId);
+    socket.in(gameId).emit('chat', {
+      message: `${nameUser} вошёл в игру`,
+      sender: 'system',
+      dateTime: new Date().toISOString(),
+    });
+  }
+
+  @SubscribeMessage('leave_game')
+  async leaveGameChat(
     @MessageBody() data: { gameId: string },
     @ConnectedSocket() socket: Socket,
   ) {
@@ -46,8 +62,10 @@ export class ChatGateway implements OnGatewayConnection {
     const { gameId } = data;
     this.chatService.createGameChat(socket, gameId);
     socket.join(gameId);
-    socket
-      .in(gameId)
-      .emit('chat', { message: `${nameUser} вошёл в игру`, sender: 'system' });
+    socket.in(gameId).emit('chat', {
+      message: `${nameUser} вышел из игры`,
+      sender: 'system',
+      dateTime: new Date().toISOString(),
+    });
   }
 }

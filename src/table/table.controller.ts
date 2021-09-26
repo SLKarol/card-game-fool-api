@@ -1,8 +1,8 @@
 import { Controller, Get, UseGuards, Query } from '@nestjs/common';
 
+import { TableInfo } from './types/tableInfo';
 import { TableService } from './table.service';
 import { JwtAuthGuard } from '@app/user/guards/jwt.guard';
-import { User } from '@app/user/decorators/user.decorator';
 
 @Controller('table')
 export class TableController {
@@ -10,14 +10,8 @@ export class TableController {
 
   @Get()
   @UseGuards(JwtAuthGuard)
-  async tableInfo(
-    @User('id_user') currentUserId: string,
-    @Query('id') idGame: string,
-  ): Promise<any> {
-    const table = await this.tableService.getTableContent(
-      currentUserId,
-      idGame,
-    );
-    return { table };
+  async tableInfo(@Query('id') idGame: string): Promise<TableInfo> {
+    const table = await this.tableService.getTableContent(idGame);
+    return table;
   }
 }

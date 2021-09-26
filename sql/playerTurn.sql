@@ -3,7 +3,7 @@ OR REPLACE FUNCTION player_turn(
   game_id uuid,
   player_id uuid,
   card_id INTEGER
-) RETURNS VOID LANGUAGE 'plpgsql' AS $$
+) RETURNS VOID LANGUAGE 'plpgsql' COST 100 VOLATILE PARALLEL UNSAFE AS $BODY$
 DECLARE
   /** Временная переменная */
   number_tmp INTEGER;
@@ -12,10 +12,6 @@ DECLARE
 new_number_step INTEGER;
 
 BEGIN
-  SELECT
-    COUNT(*)
-  FROM
-    game_view
   SELECT
     1 + COUNT(*) INTO new_number_step
   FROM
@@ -86,6 +82,8 @@ WHERE
 
 END;
 
-$$;
+$BODY$;
 
-COMMENT ON FUNCTION player_turn(uuid, uuid, INTEGER) IS 'Ход игрока- игрок наступает';
+ALTER FUNCTION PUBLIC .player_turn(uuid, uuid, INTEGER) OWNER TO postgres;
+
+COMMENT ON FUNCTION PUBLIC .player_turn(uuid, uuid, INTEGER) IS 'Ход игрока- игрок наступает';

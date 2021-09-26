@@ -9,5 +9,6 @@ import { TableService } from './table.service';
   imports: [TypeOrmModule.forFeature([CardsInTableView])],
   controllers: [TableController],
   providers: [TableService],
+  exports: [TableService],
 })
 export class TableModule {}

@@ -24,6 +24,7 @@ import {
   USER_NOT_FOUND,
 } from '@app/constants/messages';
 import { UserService } from '@app/user/user.service';
+import { TurnGameDto } from './dto/turn.dto';
 
 @Controller('game')
 export class GameController {
@@ -106,5 +107,16 @@ export class GameController {
     // Выдать список открытых игр, где юзер участвует
     const games = await this.gameService.getOpenGames(currentUserId);
     return { games };
+  }
+
+  @Post('turn')
+  @UseGuards(JwtAuthGuard)
+  @UsePipes(new BackendValidationPipe())
+  async turn(
+    @User('id_user') currentUserId: string,
+    @Body('turn') { cardId, gameId }: TurnGameDto,
+  ): Promise<boolean> {
+    await this.gameService.playerTurn({ cardId, gameId, currentUserId });
+    return true;
   }
 }

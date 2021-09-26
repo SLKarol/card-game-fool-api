@@ -9,8 +9,9 @@ import { GameSettingsInfo } from './types/gameSettings';
 import { GameEntity } from './entities/game.entity';
 import { GameView } from './entities/gameView.entity';
 import { CardsInHandsView } from './entities/cardsInHandsView.entity';
-import { GameCardsEntity } from './entities/gameCards.entity';
 import { UserEntity } from '@app/user/user.entity';
+import { ChatGateway } from '@app/gateway/chat.gateway';
+import { TableService } from '@app/table/table.service';
 
 @Injectable()
 export class GameService {
@@ -21,8 +22,8 @@ export class GameService {
     private readonly gameViewRepository: Repository<GameView>,
     @InjectRepository(CardsInHandsView)
     private readonly сardsInHandsView: Repository<CardsInHandsView>,
-    @InjectRepository(GameCardsEntity)
-    private readonly gameCardsEntity: Repository<GameCardsEntity>,
+    private readonly socketGateway: ChatGateway,
+    private readonly tableService: TableService,
   ) {}
 
   async createGame(
@@ -148,5 +149,32 @@ export class GameService {
       [currentUserId],
     );
     return records as OpenGameDto[];
+  }
+
+  async playerTurn({
+    gameId,
+    cardId,
+    currentUserId,
+  }: {
+    gameId: string;
+    cardId: number;
+    currentUserId: string;
+  }): Promise<void> {
+    // Игрок делает ход
+    try {
+      await this.gameViewRepository.query('Select move_player($1,$2,$3);', [
+        gameId,
+        currentUserId,
+        cardId,
+      ]);
+      // Получить содержимое доски
+      const tableInfo = await this.tableService.getTableContent(gameId);
+      // Отправить через сокеты это состояние доски
+      this.socketGateway.server.in(gameId).emit('table', tableInfo);
+    } catch (e) {
+      const { message } = e;
+
+      throw new HttpException(message || e, HttpStatus.UNPROCESSABLE_ENTITY);
+    }
   }
 }
