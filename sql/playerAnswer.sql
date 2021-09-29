@@ -19,7 +19,7 @@ game_over INT;
 
 BEGIN
   /*
-   Получить номер хода, и номер карты, на который делается ответ:
+   Получить номер на доске и номер карты, на который делается ответ:
    Берётся минимальный неотвеченный номер хода
    */
   SELECT
@@ -29,7 +29,7 @@ BEGIN
   FROM
     first_no_answer_card(game_id);
 
--- Можно ли картой1 отбивать карту2 в игре_ид?
+-- Можно ли картой1 отбивать карту2?
 SELECT
   check_answer_card(card_attack, card_id, game_id) INTO can_doit;
 
@@ -39,40 +39,14 @@ INSERT INTO
 VALUES
   (player_id, current_step, card_id);
 
+END IF;
+
 -- Удалить из рук игрока эту карту
 DELETE FROM
   player_card
 WHERE
   id_player = player_id
   AND id_card = card_id;
-
--- Сколько осталось не отбитых карт?
-SELECT
-  min_no_answer_card(game_id) INTO can_doit;
-
--- Проверить: Есть ли карты в руках для отбивки?
--- После этой проверки сразу же: Вычисление, кто победил?
-SELECT
-  check_game_over (game_id) INTO game_over;
-
--- Если 0, значит ход переходит нападающему
-IF can_doit = 0
-AND game_over = 0 THEN
-UPDATE
-  game
-SET
-  attack = TRUE,
-  updated_at = now()
-WHERE
-  id_game = game_id;
-
-END IF;
-
-ELSE RAISE
-EXCEPTION
-  'Player cant do this';
-
-END IF;
 
 END;
 

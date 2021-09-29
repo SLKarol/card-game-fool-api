@@ -6,7 +6,7 @@ DECLARE
 trump INT;
 
 BEGIN
-  /** Получить данные по картам **/
+  /** Получить козырь в игре **/
   SELECT
     trump_card INTO trump
   FROM
@@ -14,14 +14,15 @@ BEGIN
   WHERE
     game.id_game = game_id;
 
--- Если масти одинаковые:
+-- Если масть одинаковая и значение отбиваемой карты больше, то можно отбивать:
 IF (card1 -1) / 9 = (card2 -1) / 9
 AND (card1 -1) % 9 < (card2 -1) % 9 THEN RETURN 1;
 
 END IF;
 
--- Если у карты козырная масть:
-IF card2 / 9 = trump / 9 THEN RETURN 1;
+-- Если отбиваюсь козырем, а нападет не козырь, то можно отбивать:
+IF (card2 -1) / 9 = (trump -1) / 9
+AND (card1 -1) / 9 <> (trump -1) / 9 THEN RETURN 1;
 
 END IF;
 
