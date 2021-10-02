@@ -17,3 +17,7 @@ export interface OpenGameDto {
   nameUser: string;
   createdAt: string;
 }
+
+export interface GameOver {
+  game: { id: string; gameReady: boolean };
+}

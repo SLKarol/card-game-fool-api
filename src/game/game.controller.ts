@@ -13,7 +13,12 @@ import {
 import { GameShortInfo } from './types/gameInfo';
 import { GameSettingsInfo } from './types/gameSettings';
 
-import { CreateGameDto, InfoNewGame, OpenGameDto } from './dto/game.dto';
+import {
+  CreateGameDto,
+  GameOver,
+  InfoNewGame,
+  OpenGameDto,
+} from './dto/game.dto';
 import { User } from '@app/user/decorators/user.decorator';
 import { UserEntity } from '@app/user/user.entity';
 import { GameService } from './game.service';
@@ -118,5 +123,22 @@ export class GameController {
   ): Promise<boolean> {
     await this.gameService.playerTurn({ cardId, gameId, currentUserId });
     return true;
+  }
+
+  @Post('finishTurn')
+  @UseGuards(JwtAuthGuard)
+  async finishTurn(
+    @User('id_user') currentUserId: string,
+    @Body('turn') { gameId }: Partial<TurnGameDto>,
+  ): Promise<GameOver> {
+    const whoAttack = await this.gameService.whoAttack(gameId);
+    // Если атакует этот игрок, то он завершает ход
+    if (whoAttack === currentUserId) {
+      const gameReady = await this.gameService.finishTurn({
+        gameId,
+        currentUserId,
+      });
+      return { game: { id: gameId, gameReady } };
+    }
   }
 }

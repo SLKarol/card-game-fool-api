@@ -162,7 +162,7 @@ export class GameService {
   }): Promise<void> {
     // Игрок делает ход
     try {
-      await this.gameViewRepository.query('Select move_player($1,$2,$3);', [
+      await this.gameViewRepository.query('SELECT move_player($1,$2,$3);', [
         gameId,
         currentUserId,
         cardId,
@@ -176,5 +176,40 @@ export class GameService {
 
       throw new HttpException(message || e, HttpStatus.UNPROCESSABLE_ENTITY);
     }
+  }
+
+  async finishTurn({
+    gameId,
+    currentUserId,
+  }: {
+    gameId: string;
+    currentUserId: string;
+  }): Promise<boolean> {
+    try {
+      const gameOverTable = await this.gameRepository.query(
+        'SELECT finish_turn($1, $2) as go;',
+        [gameId, currentUserId],
+      );
+      const nextStep = gameOverTable[0]['go'] as boolean;
+      if (nextStep) {
+        // Отправить состояние игры сокетом
+        this.socketGateway.server.in(gameId).emit('game', { nextStep });
+      }
+      return nextStep;
+    } catch (e) {
+      const { message } = e;
+      throw new HttpException(message || e, HttpStatus.UNPROCESSABLE_ENTITY);
+    }
+  }
+
+  /**
+   * Возвращает ID пользователя, который сейчас ходит
+   */
+  async whoAttack(gameId: string): Promise<string> {
+    const re = await this.gameViewRepository.query(
+      'SELECT id_user FROM game_view WHERE id_game=$1 AND whose_turn=number_player;',
+      [gameId],
+    );
+    return re[0]['id_user'] as string;
   }
 }

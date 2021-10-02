@@ -60,7 +60,7 @@ HAVING
 ;
 
 SELECT
-  check_game_over (game_id) INTO game_over;
+  check_game_over(game_id) INTO game_over;
 
 IF game_over = 0 THEN -- Если игрок атакует...
 IF state_attack = 1
