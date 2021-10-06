@@ -132,13 +132,16 @@ export class GameController {
     @Body('turn') { gameId }: Partial<TurnGameDto>,
   ): Promise<GameOver> {
     const whoAttack = await this.gameService.whoAttack(gameId);
+    let gameReady: boolean;
     // Если атакует этот игрок, то он завершает ход
     if (whoAttack === currentUserId) {
-      const gameReady = await this.gameService.finishTurn({
+      gameReady = await this.gameService.finishTurn({
         gameId,
         currentUserId,
       });
       return { game: { id: gameId, gameReady } };
     }
+    gameReady = await this.gameService.takeCards({ currentUserId, gameId });
+    return { game: { id: gameId, gameReady } };
   }
 }

@@ -178,6 +178,9 @@ export class GameService {
     }
   }
 
+  /**
+   * Завершить ход
+   */
   async finishTurn({
     gameId,
     currentUserId,
@@ -211,5 +214,43 @@ export class GameService {
       [gameId],
     );
     return re[0]['id_user'] as string;
+  }
+
+  /**
+   * Тот, кто отбивается взял карты
+   */
+  async takeCards({
+    gameId,
+    currentUserId,
+  }: {
+    gameId: string;
+    currentUserId: string;
+  }): Promise<boolean> {
+    try {
+      // Общая информация
+      const game = await this.gameViewRepository.findOne({
+        where: { idGame: gameId, idUser: currentUserId },
+        select: ['nameUser'],
+      });
+      // Оповестить, что игрок берёт карты
+      this.socketGateway.server.in(gameId).emit('chat', {
+        message: `${game.nameUser} берёт карты.`,
+        sender: 'system',
+        dateTime: new Date().toISOString(),
+      });
+      // Запуск процедуры взятия карт
+      await this.gameRepository.query('SELECT fail_defence($1, $2);', [
+        gameId,
+        currentUserId,
+      ]);
+      // todo проверка: Игра окончилась? - Сейчас пока гвоздями прибито
+      // Оповестить об окончании хода
+      this.socketGateway.server.in(gameId).emit('game', { nextStep: true });
+      return true;
+    } catch (e) {
+      const { message } = e;
+
+      throw new HttpException(message || e, HttpStatus.UNPROCESSABLE_ENTITY);
+    }
   }
 }
