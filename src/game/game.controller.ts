@@ -30,12 +30,14 @@ import {
 } from '@app/constants/messages';
 import { UserService } from '@app/user/user.service';
 import { TurnGameDto } from './dto/turn.dto';
+import { ChatGateway } from '@app/gateway/chat.gateway';
 
 @Controller('game')
 export class GameController {
   constructor(
     private readonly gameService: GameService,
     private userService: UserService,
+    private readonly socketGateway: ChatGateway,
   ) {}
 
   @Post()
@@ -132,16 +134,18 @@ export class GameController {
     @Body('turn') { gameId }: Partial<TurnGameDto>,
   ): Promise<GameOver> {
     const whoAttack = await this.gameService.whoAttack(gameId);
-    let gameReady: boolean;
     // Если атакует этот игрок, то он завершает ход
     if (whoAttack === currentUserId) {
-      gameReady = await this.gameService.finishTurn({
+      await this.gameService.finishTurn({
         gameId,
         currentUserId,
       });
-      return { game: { id: gameId, gameReady } };
     }
-    gameReady = await this.gameService.takeCards({ currentUserId, gameId });
+    await this.gameService.failDefence({ currentUserId, gameId });
+    // Получить состояние игры: Игра ещё идёт?
+    const gameReady = await this.gameService.checkGameOver(gameId);
+    // Оповестить чат о состоянии игры
+    this.socketGateway.server.in(gameId).emit('game', { gameReady });
     return { game: { id: gameId, gameReady } };
   }
 }

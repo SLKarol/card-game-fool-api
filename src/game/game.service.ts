@@ -12,6 +12,7 @@ import { CardsInHandsView } from './entities/cardsInHandsView.entity';
 import { UserEntity } from '@app/user/user.entity';
 import { ChatGateway } from '@app/gateway/chat.gateway';
 import { TableService } from '@app/table/table.service';
+import { ScoreEntity } from './entities/score.entity';
 
 @Injectable()
 export class GameService {
@@ -22,6 +23,8 @@ export class GameService {
     private readonly gameViewRepository: Repository<GameView>,
     @InjectRepository(CardsInHandsView)
     private readonly сardsInHandsView: Repository<CardsInHandsView>,
+    @InjectRepository(ScoreEntity)
+    private readonly scoreRepository: Repository<ScoreEntity>,
     private readonly socketGateway: ChatGateway,
     private readonly tableService: TableService,
   ) {}
@@ -187,18 +190,12 @@ export class GameService {
   }: {
     gameId: string;
     currentUserId: string;
-  }): Promise<boolean> {
+  }): Promise<void> {
     try {
-      const gameOverTable = await this.gameRepository.query(
-        'SELECT finish_turn($1, $2) as go;',
-        [gameId, currentUserId],
-      );
-      const nextStep = gameOverTable[0]['go'] as boolean;
-      if (nextStep) {
-        // Отправить состояние игры сокетом
-        this.socketGateway.server.in(gameId).emit('game', { nextStep });
-      }
-      return nextStep;
+      await this.gameRepository.query('SELECT finish_turn($1, $2) as go;', [
+        gameId,
+        currentUserId,
+      ]);
     } catch (e) {
       const { message } = e;
       throw new HttpException(message || e, HttpStatus.UNPROCESSABLE_ENTITY);
@@ -217,15 +214,15 @@ export class GameService {
   }
 
   /**
-   * Тот, кто отбивается взял карты
+   * Игрок не смог отбиться и взял карты
    */
-  async takeCards({
+  async failDefence({
     gameId,
     currentUserId,
   }: {
     gameId: string;
     currentUserId: string;
-  }): Promise<boolean> {
+  }): Promise<void> {
     try {
       // Общая информация
       const game = await this.gameViewRepository.findOne({
@@ -243,14 +240,22 @@ export class GameService {
         gameId,
         currentUserId,
       ]);
-      // todo проверка: Игра окончилась? - Сейчас пока гвоздями прибито
-      // Оповестить об окончании хода
-      this.socketGateway.server.in(gameId).emit('game', { nextStep: true });
-      return true;
     } catch (e) {
       const { message } = e;
-
       throw new HttpException(message || e, HttpStatus.UNPROCESSABLE_ENTITY);
     }
+  }
+
+  /**
+   * Проверка на факт окончания игры
+   * (и установление рекордов)
+   */
+  async checkGameOver(gameId: string): Promise<boolean> {
+    const endOfGameTable = await this.gameRepository.query(
+      'SELECT check_game_over($1) as e;',
+      [gameId],
+    );
+    const endOfGame = endOfGameTable[0]['e'] as number;
+    return !!endOfGame;
   }
 }

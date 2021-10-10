@@ -1,5 +1,12 @@
-import { BeforeInsert, Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  BeforeInsert,
+  Column,
+  Entity,
+  OneToMany,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { hash, genSalt } from 'bcrypt';
+import { ScoreEntity } from '@app/game/entities/score.entity';
 
 @Entity({ name: 'users' })
 export class UserEntity {
@@ -17,6 +24,9 @@ export class UserEntity {
 
   @Column({ type: 'numeric' })
   wins: number;
+
+  @OneToMany(() => ScoreEntity, (score) => score.game)
+  scores: ScoreEntity[];
 
   @BeforeInsert()
   async hashPassword() {

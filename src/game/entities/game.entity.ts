@@ -1,4 +1,6 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+
+import { ScoreEntity } from './score.entity';
 
 @Entity({ name: 'game' })
 export class GameEntity {
@@ -30,4 +32,7 @@ export class GameEntity {
     name: 'updated_at',
   })
   updatedAt: Date;
+
+  @OneToMany(() => ScoreEntity, (score) => score.game)
+  scores: ScoreEntity[];
 }

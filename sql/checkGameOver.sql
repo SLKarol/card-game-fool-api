@@ -10,7 +10,17 @@ player1_cards INT;
 -- Количество карт у игрока2
 player2_cards INT;
 
+-- Есть ли 
 BEGIN
+  -- Если нет записей в таблице рекордов, значит игру требуется проверить на то, что она окончена
+  IF NOT EXISTS (
+    SELECT
+      *
+    FROM
+      score
+    WHERE
+      id_game = game_id
+  ) THEN
   SELECT
     COUNT(*) INTO count_game_card
   FROM
@@ -18,6 +28,7 @@ BEGIN
   WHERE
     id_game = game_id;
 
+-- Если есть карты в колоде, значит игра ещё идёт
 IF count_game_card > 0 THEN RETURN 0;
 
 END IF;
@@ -43,40 +54,32 @@ AND player1_cards > 0 THEN RETURN 0;
 
 END IF;
 
--- Игра окончена, записать результаты в таблицу
+-- Игра окончена, записать результаты в таблицу рекордов
 IF player1_cards = 0 THEN
-UPDATE
-  users
-SET
-  wins = wins + 1
+INSERT INTO
+  score (id_game, id_user)
+SELECT
+  game_id,
+  id_user
+FROM
+  game_view
 WHERE
-  id_user IN (
-    SELECT
-      id_user
-    FROM
-      game_view
-    WHERE
-      id_game = game_id
-      AND number_player = 1
-  );
+  id_game = game_id
+  AND number_player = 1;
 
 END IF;
 
 IF player2_cards = 0 THEN
-UPDATE
-  users
-SET
-  wins = wins + 1
+INSERT INTO
+  score (id_game, id_user)
+SELECT
+  game_id,
+  id_user
+FROM
+  game_view
 WHERE
-  id_user IN (
-    SELECT
-      id_user
-    FROM
-      game_view
-    WHERE
-      id_game = game_id
-      AND number_player = 2
-  );
+  id_game = game_id
+  AND number_player = 2;
 
 END IF;
 
@@ -89,6 +92,11 @@ WHERE
   id_game = game_id;
 
 RETURN 1;
+
+-- Иначе, вернуть 1- игра окончена
+ELSE RETURN 1;
+
+END IF;
 
 END;
 
