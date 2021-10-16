@@ -27,4 +27,11 @@ export interface GameSettingsInfo {
 
     numberPlayer: number;
   };
+
+  /**
+   * Игра отрытая (не завершена)?
+   */
+  gameOpen: boolean;
+
+  victory: string[];
 }

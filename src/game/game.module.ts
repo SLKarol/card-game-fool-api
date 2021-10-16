@@ -9,17 +9,17 @@ import { GameService } from './game.service';
 import { UserModule } from '@app/user/user.module';
 import { ChatModule } from '@app/gateway/chat.module';
 import { TableModule } from '@app/table/table.module';
-import { ScoreEntity } from './entities/score.entity';
+import { ReportModule } from '@app/report/report.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([GameEntity]),
     TypeOrmModule.forFeature([GameView]),
     TypeOrmModule.forFeature([CardsInHandsView]),
-    TypeOrmModule.forFeature([ScoreEntity]),
     UserModule,
     ChatModule,
     TableModule,
+    ReportModule,
   ],
   controllers: [GameController],
   providers: [GameService],

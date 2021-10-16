@@ -5,6 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { getOrmConfig } from './configs/ormconfig';
 import { GameModule } from './game/game.module';
 import { ChatModule } from './gateway/chat.module';
+import { ReportModule } from './report/report.module';
 import { TableModule } from './table/table.module';
 import { UserModule } from './user/user.module';
 
@@ -20,6 +21,7 @@ import { UserModule } from './user/user.module';
     GameModule,
     ChatModule,
     TableModule,
+    ReportModule,
   ],
 })
 export class AppModule {}

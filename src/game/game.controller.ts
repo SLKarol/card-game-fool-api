@@ -141,11 +141,14 @@ export class GameController {
         currentUserId,
       });
     }
-    await this.gameService.failDefence({ currentUserId, gameId });
+    // Иначе защита не удалась
+    else {
+      await this.gameService.failDefence({ currentUserId, gameId });
+    }
     // Получить состояние игры: Игра ещё идёт?
-    const gameReady = await this.gameService.checkGameOver(gameId);
+    const gameOver = await this.gameService.checkGameOver(gameId);
     // Оповестить чат о состоянии игры
-    this.socketGateway.server.in(gameId).emit('game', { gameReady });
-    return { game: { id: gameId, gameReady } };
+    this.socketGateway.server.in(gameId).emit('game', { gameReady: !gameOver });
+    return { game: { id: gameId, gameReady: !gameOver } };
   }
 }

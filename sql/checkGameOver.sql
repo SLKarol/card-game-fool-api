@@ -50,7 +50,7 @@ WHERE
   AND number_player = 2;
 
 IF player1_cards > 0
-AND player1_cards > 0 THEN RETURN 0;
+AND player2_cards > 0 THEN RETURN 0;
 
 END IF;
 

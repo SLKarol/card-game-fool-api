@@ -12,7 +12,7 @@ import { CardsInHandsView } from './entities/cardsInHandsView.entity';
 import { UserEntity } from '@app/user/user.entity';
 import { ChatGateway } from '@app/gateway/chat.gateway';
 import { TableService } from '@app/table/table.service';
-import { ScoreEntity } from './entities/score.entity';
+import { ReportService } from '@app/report/report.service';
 
 @Injectable()
 export class GameService {
@@ -23,10 +23,9 @@ export class GameService {
     private readonly gameViewRepository: Repository<GameView>,
     @InjectRepository(CardsInHandsView)
     private readonly сardsInHandsView: Repository<CardsInHandsView>,
-    @InjectRepository(ScoreEntity)
-    private readonly scoreRepository: Repository<ScoreEntity>,
     private readonly socketGateway: ChatGateway,
     private readonly tableService: TableService,
+    private readonly reportService: ReportService,
   ) {}
 
   async createGame(
@@ -62,7 +61,7 @@ export class GameService {
         select: ['createdAt', 'whoseTurn'],
       });
       if (!game) {
-        return { available: false, createdAt: '', id: '' };
+        throw new HttpException('Game not found', HttpStatus.NOT_FOUND);
       }
       return {
         available: game.whoseTurn !== null,
@@ -109,10 +108,13 @@ export class GameService {
       .where('id_game = :id', { id: gameId })
       .andWhere('id_user <> :user', { user: currentUserId })
       .getRawOne();
+    // Информация о пользователе
     const { nameUser, numberPlayer } = await this.gameViewRepository.findOne({
       where: { idGame: gameId, idUser: Not(currentUserId) },
       select: ['nameUser', 'numberPlayer'],
     });
+    // Статус игры и победители (если есть такие)
+    const victory = await this.reportService.getGameScore(gameId);
 
     return {
       game,
@@ -122,6 +124,8 @@ export class GameService {
         name: nameUser,
         numberPlayer,
       },
+      gameOpen: !victory.length,
+      victory,
     };
   }
 
