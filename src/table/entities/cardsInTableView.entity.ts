@@ -11,7 +11,11 @@ SELECT game_table.id_game_table,
   game_table.numb_card,
   playing_card.id_card,
   playing_card.id_suit,
-  playing_card.card_value
+  playing_card.card_value,
+  CASE
+  WHEN game.whose_turn = player.number_player THEN 1
+  ELSE 0
+END AS attack  
 FROM game
    JOIN player ON game.id_game = player.id_game
    JOIN game_table ON game_table.id_player = player.id_player
@@ -50,4 +54,7 @@ export class CardsInTableView {
 
   @ViewColumn({ name: 'card_value' })
   cardValue: number;
+
+  @ViewColumn({ name: 'attack' })
+  attack: number;
 }

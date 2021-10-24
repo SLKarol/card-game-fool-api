@@ -8,6 +8,7 @@ import {
   Query,
   HttpException,
   HttpStatus,
+  Param,
 } from '@nestjs/common';
 
 import { GameShortInfo } from './types/gameInfo';
@@ -122,9 +123,12 @@ export class GameController {
   async turn(
     @User('id_user') currentUserId: string,
     @Body('turn') { cardId, gameId }: TurnGameDto,
-  ): Promise<boolean> {
+  ): Promise<void> {
     await this.gameService.playerTurn({ cardId, gameId, currentUserId });
-    return true;
+    // Получить состояние игры: Игра ещё идёт?
+    // const gameOver = await this.gameService.checkGameOver(gameId);
+    // Оповестить чат о состоянии игры
+    // this.socketGateway.server.in(gameId).emit('game', { gameReady: !gameOver });
   }
 
   @Post('finishTurn')
@@ -150,5 +154,19 @@ export class GameController {
     // Оповестить чат о состоянии игры
     this.socketGateway.server.in(gameId).emit('game', { gameReady: !gameOver });
     return { game: { id: gameId, gameReady: !gameOver } };
+  }
+
+  @Get('opponent/:game')
+  @UseGuards(JwtAuthGuard)
+  @UsePipes(new BackendValidationPipe())
+  async opponent(
+    @Param('game') gameId: string,
+    @User('id_user') currentUserId: string,
+  ): Promise<number> {
+    const countOpponentCars = await this.gameService.getCountOpponentsCards(
+      gameId,
+      currentUserId,
+    );
+    return countOpponentCars;
   }
 }

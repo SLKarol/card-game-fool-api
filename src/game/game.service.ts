@@ -262,4 +262,18 @@ export class GameService {
     const endOfGame = endOfGameTable[0]['e'] as number;
     return !!endOfGame;
   }
+
+  /**
+   * Получить к-во карт у оппонента
+   */
+  async getCountOpponentsCards(
+    gameId: string,
+    userId: string,
+  ): Promise<number> {
+    const cnt = await this.сardsInHandsView.findAndCount({
+      where: { idGame: gameId, idUser: Not(userId) },
+    });
+    const [, count] = cnt;
+    return count;
+  }
 }
