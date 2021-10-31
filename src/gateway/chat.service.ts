@@ -11,8 +11,7 @@ export class ChatService {
 
   async getUserFromSocket(socket: Socket): Promise<UserEntity> {
     try {
-      const bearerToken =
-        socket.handshake?.headers?.authorization.split(' ')[1];
+      const bearerToken = socket.handshake.auth.token;
       const idUser = await this.userService.getUserIdFromAuthenticationToken(
         bearerToken,
       );

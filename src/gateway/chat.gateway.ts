@@ -42,12 +42,12 @@ export class ChatGateway implements OnGatewayConnection {
   ) {
     const { user } = socket.data;
     if (!user) return;
-    const { name_user: nameUser } = user;
+    const { name_user } = user;
     const { gameId } = data;
     this.chatService.createGameChat(socket, gameId);
-    socket.join(gameId);
+    await socket.join(gameId);
     socket.in(gameId).emit('chat', {
-      message: `${nameUser} вошёл в игру`,
+      message: `${name_user} вошёл в игру`,
       sender: 'system',
       dateTime: new Date().toISOString(),
     });
@@ -61,7 +61,7 @@ export class ChatGateway implements OnGatewayConnection {
     const { name_user: nameUser } = socket.data.user;
     const { gameId } = data;
     this.chatService.createGameChat(socket, gameId);
-    socket.join(gameId);
+    await socket.leave(gameId);
     socket.in(gameId).emit('chat', {
       message: `${nameUser} вышел из игры`,
       sender: 'system',
