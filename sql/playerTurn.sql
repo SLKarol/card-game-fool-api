@@ -1,9 +1,5 @@
 CREATE
-OR REPLACE FUNCTION player_turn(
-  game_id uuid,
-  player_id uuid,
-  card_id INTEGER
-) RETURNS VOID LANGUAGE 'plpgsql' COST 100 VOLATILE PARALLEL UNSAFE AS $BODY$
+OR REPLACE FUNCTION player_turn(game_id uuid, player_id uuid, card_id INTEGER) RETURNS VOID LANGUAGE plpgsql AS $function$
 DECLARE
   /** Временная переменная */
   number_tmp INTEGER;
@@ -13,7 +9,7 @@ new_number_step INTEGER;
 
 BEGIN
   SELECT
-    1 + COUNT(*) INTO new_number_step
+    1 + COALESCE(MAX(numb_card), 0) INTO new_number_step
   FROM
     cards_in_table
   WHERE
@@ -82,8 +78,4 @@ WHERE
 
 END;
 
-$BODY$;
-
-ALTER FUNCTION PUBLIC .player_turn(uuid, uuid, INTEGER) OWNER TO postgres;
-
-COMMENT ON FUNCTION PUBLIC .player_turn(uuid, uuid, INTEGER) IS 'Ход игрока- игрок наступает';
+$function$;
