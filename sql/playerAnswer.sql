@@ -1,9 +1,5 @@
 CREATE
-OR REPLACE FUNCTION player_answer(
-  game_id uuid,
-  player_id uuid,
-  card_id INTEGER
-) RETURNS VOID LANGUAGE 'plpgsql' AS $BODY$
+OR REPLACE FUNCTION player_answer(game_id uuid, player_id uuid, card_id INTEGER) RETURNS VOID LANGUAGE plpgsql AS $function$
 DECLARE
   /** Текущий ход **/
   current_step INT;
@@ -12,10 +8,13 @@ DECLARE
 card_attack INT;
 
 -- Может отбиваться?
-can_doit INT;
+can_answer INT;
 
 -- Игра окончена?
 game_over INT;
+
+-- Есть карты для отбивания?
+have_card_answer INT;
 
 BEGIN
   /*
@@ -31,13 +30,22 @@ BEGIN
 
 -- Можно ли картой1 отбивать карту2?
 SELECT
-  check_answer_card(card_attack, card_id, game_id) INTO can_doit;
+  check_answer_card(card_attack, card_id, game_id) INTO can_answer;
 
-IF can_doit = 1 THEN -- Перенести карту на стол
+-- Есть ли карты для того, чтобы отбить?
+SELECT
+  check_have_card_answer(game_id, player_id) INTO have_card_answer;
+
+IF can_answer = 1
+AND have_card_answer = 1 THEN -- Перенести карту на стол
 INSERT INTO
   game_table(id_player, numb_card, id_card)
 VALUES
   (player_id, current_step, card_id);
+
+ELSE RAISE
+EXCEPTION
+  'Player cant do this';
 
 END IF;
 
@@ -50,6 +58,4 @@ WHERE
 
 END;
 
-$BODY$;
-
-COMMENT ON FUNCTION player_answer(uuid, uuid, INTEGER) IS 'Ход игрока- игрок отвечает';
+$function$;

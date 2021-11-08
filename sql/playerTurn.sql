@@ -48,12 +48,7 @@ END IF;
 
 -- C: У второго игрока хватит карт отбить?
 SELECT
-  COUNT(*) INTO number_tmp
-FROM
-  cards_in_hands
-WHERE
-  id_game = game_id
-  AND id_player <> player_id;
+  check_have_card_answer(game_id, player_id) INTO number_tmp;
 
 IF number_tmp = 0 THEN RAISE
 EXCEPTION

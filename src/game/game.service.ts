@@ -180,7 +180,6 @@ export class GameService {
       this.socketGateway.server.in(gameId).emit('table', tableInfo);
     } catch (e) {
       const { message } = e;
-
       throw new HttpException(message || e, HttpStatus.UNPROCESSABLE_ENTITY);
     }
   }
