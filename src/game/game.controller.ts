@@ -125,10 +125,6 @@ export class GameController {
     @Body('turn') { cardId, gameId }: TurnGameDto,
   ): Promise<void> {
     await this.gameService.playerTurn({ cardId, gameId, currentUserId });
-    // Получить состояние игры: Игра ещё идёт?
-    // const gameOver = await this.gameService.checkGameOver(gameId);
-    // Оповестить чат о состоянии игры
-    // this.socketGateway.server.in(gameId).emit('game', { gameReady: !gameOver });
   }
 
   @Post('finishTurn')
