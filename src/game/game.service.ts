@@ -148,7 +148,7 @@ export class GameService {
         FROM
           game_view
         WHERE
-          id_user = $1
+          id_user = $1 AND whose_turn is not null
       )
       AND id_user <> $1
     ORDER BY
