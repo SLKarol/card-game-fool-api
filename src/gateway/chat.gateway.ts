@@ -24,14 +24,14 @@ export class ChatGateway implements OnGatewayConnection {
 
   @SubscribeMessage('send_message')
   async listenForMessages(
-    @MessageBody() data: string,
+    @MessageBody() data: { gameId: string; message: string },
     @ConnectedSocket() socket: Socket,
   ) {
-    // const gamerId = await this.chatService.getUserIdFromSocket(client);
-    console.log('data :>> ', data);
-    console.log('gamer :>> ', socket.data);
-    socket.send('Some from server');
-    socket.emit('receive_message', 'Ho-ho!');
+    socket.in(data.gameId).emit('chat', {
+      message: data.message,
+      sender: 'opponent',
+      dateTime: new Date().toISOString(),
+    });
     return data;
   }
 
